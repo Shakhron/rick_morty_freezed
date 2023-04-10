@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:rick_morty_freezed/bloc/character_bloc.dart';
 import 'package:rick_morty_freezed/data/models/character.dart';
+import 'package:rick_morty_freezed/ui/widgets/custom_list_tile.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -98,13 +99,8 @@ Widget _customListView(List<Results> currentResults) {
       final resilt = currentResults[index];
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-        child: ListTile(
-          title: Text(
-            resilt.name,
-            style: const TextStyle(
-              color: Colors.white,
-            ),
-          ),
+        child: CustomListTile(
+          results: resilt,
         ),
       );
     },
