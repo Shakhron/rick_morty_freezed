@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:rick_morty_freezed/bloc/character_bloc.dart';
 import 'package:rick_morty_freezed/data/models/character.dart';
 import 'package:rick_morty_freezed/ui/widgets/custom_list_tile.dart';
@@ -16,6 +17,9 @@ class _SearchPageState extends State<SearchPage> {
   List<Results> _currentResult = [];
   int _currentPage = 1;
   String _currentSearchStr = '';
+
+  final RefreshController refreshController = RefreshController();
+  bool _isPagination = false;
 
   @override
   void initState() {
@@ -68,19 +72,28 @@ class _SearchPageState extends State<SearchPage> {
           child: state.when(
             initial: () => const SizedBox(),
             loading: () {
-              return Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    CircularProgressIndicator(),
-                    Text('Loading...'),
-                  ],
-                ),
-              );
+              if (!_isPagination) {
+                return Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      CircularProgressIndicator(),
+                      Text('Loading...'),
+                    ],
+                  ),
+                );
+              } else {
+                return _customListView(_currentResult);
+              }
             },
             loaded: (characterLoaded) {
-              _currentCharacter = characterLoaded;
-              _currentResult = _currentCharacter.results;
+              if (_isPagination) {
+                _currentResult.addAll(_currentCharacter.results);
+                refreshController.loadComplete();
+                _isPagination = false;
+              } else {
+                _currentResult = _currentCharacter.results;
+              }
               return _currentResult.isNotEmpty
                   ? _customListView(_currentResult)
                   : const SizedBox();
@@ -91,20 +104,35 @@ class _SearchPageState extends State<SearchPage> {
       ],
     );
   }
-}
 
-Widget _customListView(List<Results> currentResults) {
-  return ListView.separated(
-    itemBuilder: (context, index) {
-      final resilt = currentResults[index];
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
-        child: CustomListTile(
-          results: resilt,
-        ),
-      );
-    },
-    separatorBuilder: (_, index) => const SizedBox(height: 5),
-    itemCount: currentResults.length,
-  );
+  Widget _customListView(List<Results> currentResults) {
+    return SmartRefresher(
+      controller: refreshController,
+      enablePullUp: true,
+      enablePullDown: false,
+      onLoading: () {
+        _isPagination = true;
+        _currentPage++;
+        if (_currentPage <= _currentCharacter.info.pages) {
+          context.read<CharacterBloc>().add(CharacterEvent.started(
+              name: _currentSearchStr, page: _currentPage));
+        } else {
+          refreshController.loadNoData();
+        }
+      },
+      child: ListView.separated(
+        itemBuilder: (context, index) {
+          final resilt = currentResults[index];
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+            child: CustomListTile(
+              results: resilt,
+            ),
+          );
+        },
+        separatorBuilder: (_, index) => const SizedBox(height: 5),
+        itemCount: currentResults.length,
+      ),
+    );
+  }
 }
