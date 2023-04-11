@@ -6,4 +6,7 @@ class CharacterState with _$CharacterState {
   const factory CharacterState.loaded({required Character characterLoaded}) =
       _CharacterLoaded;
   const factory CharacterState.error() = _Error;
+
+  factory CharacterState.fromJson(Map<String, dynamic> json) =>
+      _$CharacterStateFromJson(json);
 }

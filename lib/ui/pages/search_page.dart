@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:rick_morty_freezed/bloc/character_bloc.dart';
 import 'package:rick_morty_freezed/data/models/character.dart';
@@ -23,10 +24,12 @@ class _SearchPageState extends State<SearchPage> {
 
   @override
   void initState() {
-    if (_currentResult.isEmpty) {
-      context
-          .read<CharacterBloc>()
-          .add(const CharacterEvent.started(name: '', page: 1));
+    if (HydratedBloc.storage.toString().isEmpty) {
+      if (_currentResult.isEmpty) {
+        context
+            .read<CharacterBloc>()
+            .add(const CharacterEvent.started(name: '', page: 1));
+      }
     }
 
     super.initState();
@@ -70,7 +73,6 @@ class _SearchPageState extends State<SearchPage> {
         ),
         Expanded(
           child: state.when(
-            initial: () => const SizedBox(),
             loading: () {
               if (!_isPagination) {
                 return Center(
